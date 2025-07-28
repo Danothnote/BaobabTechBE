@@ -1,0 +1,54 @@
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb_server
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/mongodb_data:/data/db"
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: daniel
+      MONGODB_INITDB_ROOT_PASSWORD: Titangottkalt66
+    networks:
+      - baobab_tech_network
+
+  fastapi_app:
+    build: .
+    container_name: baobab_tech_backend_dev
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/BaobabTechBE:/app"
+      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/static_files_local:/app/static"
+    environment:
+      MongoDB_URI: mongodb://daniel:Titangottkalt66@mongodb:27017/
+      SECRET_KEY: "^518ohxy222LbuU#"
+    depends_on:
+      - mongodb
+    networks:
+      - baobab_tech_network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  react_app:
+    build:
+      context: "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/BaobabTechFE"
+      dockerfile: Dockerfile.react
+    container_name: baobab_tech_frontend_dev
+    restart: always
+    ports:
+      - "5173:5173"
+    volumes:
+      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/BaobabTechFE:/app"
+    networks:
+      - baobab_tech_network
+    depends_on:
+      - fastapi_app
+    command: yarn dev --host 0.0.0.0 --port 5173
+    environment:
+      VITE_API_URL: http://localhost:8000
+
+networks:
+  baobab_tech_network:
+    driver: bridge
