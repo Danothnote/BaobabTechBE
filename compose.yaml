@@ -25,6 +25,7 @@ services:
     environment:
       MongoDB_URI: mongodb://daniel:Titangottkalt66@mongodb:27017/
       SECRET_KEY: "^518ohxy222LbuU#"
+      ORIGINS: "http://localhost,http://localhost:5173,http://127.0.0.1:5173"
     depends_on:
       - mongodb
     networks:
