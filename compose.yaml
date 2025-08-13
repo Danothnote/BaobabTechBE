@@ -6,7 +6,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/mongodb_data:/data/db"
+      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/mongodb_data:/data/db:z"
     environment:
       MONGODB_INITDB_ROOT_USERNAME: daniel
       MONGODB_INITDB_ROOT_PASSWORD: Titangottkalt66
@@ -20,8 +20,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/BaobabTechBE:/app"
-      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/static_files_local:/app/static"
+      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/BaobabTechBE:/app:z"
+      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/static_files_local:/app/static:z"
     environment:
       MongoDB_URI: mongodb://daniel:Titangottkalt66@mongodb:27017/
       SECRET_KEY: "^518ohxy222LbuU#"
@@ -41,7 +41,7 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/BaobabTechFE:/app"
+      - "/home/daniel/Documentos/Bootcamp/BackEnd/ProyectoFinal/BaobabTechFE:/app:z"
     networks:
       - baobab_tech_network
     depends_on:

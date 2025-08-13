@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, UploadFile, File
 from middlewares.auth import get_current_user
 from typing import List, Optional
 from models.Product import Product, ProductUpdate
-from services.products_services import create_product, get_all_products, get_product_by_id, get_owner_products, update_product, delete_product
+from services.products_services import create_product, get_all_products, get_product_by_id, get_products_by_filter, get_owner_products, update_product, delete_product
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -13,6 +13,10 @@ def get_all_products_router():
 @router.get("/by_id/{_id}")
 def get_product_by_id_router(_id: str):
     return get_product_by_id(_id)
+
+@router.get("/by_filter")
+def get_products_by_filter_router(filter_product: dict):
+    return get_products_by_filter(filter_product)
 
 @router.get("/owner_products")
 def get_owner_products_router(current_user: dict = Depends(get_current_user)):
@@ -25,18 +29,18 @@ async def create_product_router(
         brand: str = Form(...),
         model: str = Form(...),
         category: str = Form(...),
-        image_url: List[UploadFile] = File(...),
+        image_url: List[UploadFile] = File(None),
         price: float = Form(...),
         quantity: int = Form(...),
-        cpu: Optional[str] = Form(...),
-        gpu: Optional[str] = Form(...),
-        ram: Optional[int] = Form(...),
-        storage_type: Optional[str] = Form(...),
-        storage: Optional[int] = Form(...),
-        battery: Optional[int] = Form(...),
-        display_size: Optional[float] = Form(...),
-        display_resolution: Optional[str] = Form(...),
-        panel_type: Optional[str] = Form(...),
+        cpu: Optional[str] = Form(None),
+        gpu: Optional[str] = Form(None),
+        ram: Optional[int] = Form(None),
+        storage_type: Optional[str] = Form(None),
+        storage: Optional[int] = Form(None),
+        battery: Optional[int] = Form(None),
+        display_size: Optional[float] = Form(None),
+        display_resolution: Optional[str] = Form(None),
+        panel_type: Optional[str] = Form(None),
         current_user: dict = Depends(get_current_user)
 ):
     product_data = Product(

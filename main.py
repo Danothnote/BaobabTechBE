@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
-from routes import auth, users, products
+from routes import auth, users, products, favorites, categories
 import os
 
 app = FastAPI()
@@ -21,8 +21,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static/images/", StaticFiles(directory="static/images/"), name="images")
+app.mount("/static/", StaticFiles(directory="static/"), name="images")
 
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(products.router)
+app.include_router(favorites.router)
+app.include_router(categories.router)

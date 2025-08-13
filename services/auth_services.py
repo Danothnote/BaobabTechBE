@@ -41,7 +41,7 @@ def register_user(create_user: CreateUser):
             )
 
         user_data["role"] = "user"
-        user_data["favorite_products"] = []
+        user_data["status"] = "active"
         user_data["profile_picture"] = ""
 
         hash_password = bcrypt.hashpw(

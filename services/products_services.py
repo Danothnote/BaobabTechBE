@@ -45,6 +45,12 @@ def get_all_products():
             product["_id"] = str(product["_id"])
             results.append(product)
 
+        if not results:
+            return {
+                "message": "Productos no encontrados",
+                "data": []
+            }
+
         return {
             "message": "Productos encontrados",
             "data": results
@@ -79,6 +85,29 @@ def get_product_by_id(product_id):
         return {
             "message": "Producto encontrado",
             "data": result_exists
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def get_products_by_filter(filter_product: dict):
+    try:
+        results = []
+
+        for product in products.find(filter_product):
+            product["_id"] = str(product["_id"])
+            results.append(product)
+
+        if not results:
+            return {
+                "message": "Productos no encontrados",
+                "data": []
+            }
+
+        return {
+            "message": "Productos encontrados",
+            "data": results
         }
     except HTTPException as e:
         raise e
@@ -121,7 +150,7 @@ async def create_product(product: Product, upload_files: List[UploadFile], owner
 
         products.update_one(
             {"_id": new_product_id},
-            {"$set": {"img_upload": image_paths}}
+            {"$set": {"image_url": image_paths}}
         )
         return {
             "message": 'Producto registrado con exito!'
