@@ -17,7 +17,8 @@ def get_categories():
                 subcategory["_id"] = str(subcategory["_id"])
                 subcategories.append(subcategory)
             category_data = {
-                "category": category,
+                "_id": category["_id"],
+                "name": category["name"],
                 "subcategories": subcategories,
             }
             results.append(category_data)

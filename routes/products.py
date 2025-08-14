@@ -14,7 +14,7 @@ def get_all_products_router():
 def get_product_by_id_router(_id: str):
     return get_product_by_id(_id)
 
-@router.get("/by_filter")
+@router.post("/by_filter")
 def get_products_by_filter_router(filter_product: dict):
     return get_products_by_filter(filter_product)
 

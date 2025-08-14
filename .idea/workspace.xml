@@ -5,21 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8fe712d8-1279-447b-817d-a3a03cf8a927" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/models/Category.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/models/Favorite.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/routes/categories.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/routes/favorites.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/categories_services.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/favorites_services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/compose.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routes/products.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/products.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/users.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/auth_services.py" beforeDir="false" afterPath="$PROJECT_DIR$/services/auth_services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/products_services.py" beforeDir="false" afterPath="$PROJECT_DIR$/services/products_services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/users_services.py" beforeDir="false" afterPath="$PROJECT_DIR$/services/users_services.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/categories_services.py" beforeDir="false" afterPath="$PROJECT_DIR$/services/categories_services.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,7 +88,8 @@
       <workItem from="1754629532934" duration="4695000" />
       <workItem from="1754689325833" duration="2806000" />
       <workItem from="1754979744643" duration="937000" />
-      <workItem from="1755040597227" duration="13279000" />
+      <workItem from="1755040597227" duration="13964000" />
+      <workItem from="1755128710512" duration="4764000" />
     </task>
     <servers />
   </component>
