@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
-from routes import auth, users, products, favorites, categories
+from routes import auth, users, products, favorites, categories, cart
 import os
 
 app = FastAPI()
@@ -28,3 +28,4 @@ app.include_router(users.router)
 app.include_router(products.router)
 app.include_router(favorites.router)
 app.include_router(categories.router)
+app.include_router(cart.router)
