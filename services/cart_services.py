@@ -50,3 +50,10 @@ def remove_from_cart(product_id: str, user_id: str,):
         "message": "Producto eliminado del carrito",
         "data": updated_cart
     }
+
+def clean_cart(user_id: str):
+    cart_db.update_one({"user_id": user_id}, {"$set": {"items": []}})
+
+    return {
+        "message": "Carrito eliminado con exito",
+    }

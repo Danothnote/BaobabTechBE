@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Response, Depends
+from typing import Optional, List
+
+from fastapi import APIRouter, Response, Depends, File, UploadFile
 from models.User import CreateUser, UserLogin, UpdateUser
-from services.auth_services import register_user, login_user, get_user, logout_user, update_user
+from services.auth_services import register_user, login_user, get_user, logout_user, update_user_data, update_user_files
 from middlewares.auth import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -21,6 +23,10 @@ def login_user_router(user_login: UserLogin, response: Response):
 def logout_user_router(response: Response):
     return logout_user(response)
 
-@router.patch("/me")
-def update_user_router(update_data: UpdateUser, current_user: dict = Depends(get_current_user)):
-    return update_user(current_user, update_data)
+@router.patch("/me/data")
+def update_user_data_router(update_data: UpdateUser, current_user: dict = Depends(get_current_user)):
+    return update_user_data(update_data, current_user["_id"])
+
+@router.patch("/me/files")
+async def update_user_data_router(new_img_upload: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    return await update_user_files(new_img_upload, current_user["_id"])

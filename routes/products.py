@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, Form, UploadFile, File
+from fastapi import APIRouter, Depends, Form, UploadFile, File, Body
+import json
 from middlewares.auth import get_current_user
 from typing import List, Optional
 from models.Product import Product, ProductUpdate
-from services.products_services import create_product, get_all_products, get_product_by_id, get_products_by_filter, get_owner_products, update_product, delete_product
+from services.products_services import create_product, get_all_products, get_product_by_id, get_products_by_filter, get_owner_products, update_product, update_product_data, update_product_files, delete_product
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -64,15 +65,24 @@ async def create_product_router(
     )
     return await create_product(product_data, image_url, current_user["_id"])
 
-@router.patch("/{_id}")
-async def update_product_router(
+@router.patch("/data/{_id}")
+def update_product_data_router(
         _id: str,
         update_data: ProductUpdate,
-        new_img_upload: Optional[List[UploadFile]],
         current_user: dict = Depends(get_current_user)
 ):
-    return await update_product(_id, update_data, new_img_upload, current_user["_id"])
+    return update_product_data(_id, update_data, current_user["_id"])
 
-@router.delete("/{_id}")
+@router.patch("/files/{_id}")
+async def update_product_files_router(
+        _id: str,
+        new_img_upload: Optional[List[UploadFile]] = File(None),
+        images_to_delete: str = Form("[]"),
+        current_user: dict = Depends(get_current_user)
+):
+    images_to_delete_list = json.loads(images_to_delete)
+    return await update_product_files(_id, new_img_upload, images_to_delete_list, current_user["_id"])
+
+@router.delete("/delete/{_id}")
 def delete_product_router(_id: str, current_user: dict = Depends(get_current_user)):
     return delete_product(_id, current_user["_id"])

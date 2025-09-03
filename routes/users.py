@@ -12,6 +12,6 @@ def get_users_router(current_user: dict = Depends(get_current_user)):
 def get_user_by_id_router(user_id: str, current_user: dict = Depends(get_current_user)):
     return get_user_by_id(user_id, current_user["role"])
 
-@router.put("/deactivate/{user_id}")
+@router.patch("/deactivate/{user_id}")
 def deactivate_user_router(user_id:str, current_user: dict = Depends(get_current_user)):
     return deactivate_user(user_id, current_user["role"])

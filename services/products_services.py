@@ -171,11 +171,11 @@ async def update_product(product_id: str, update_data: ProductUpdate, new_upload
         if not update_fields:
             raise HTTPException(status_code=400, detail="No hay datos para actualizar")
 
-        if not product["owner"] == owner:
-            raise HTTPException(status_code=401, detail="Usuario no autorizado")
+        #if not product["owner"] == owner:
+        #    raise HTTPException(status_code=401, detail="Usuario no autorizado")
 
-        current_img_upload_urls = set(product.get("img_upload", []))
-        desired_img_upload_urls = set(update_data.img_upload) if update_data.img_upload is not None else set(current_img_upload_urls)
+        current_img_upload_urls = set(product.get("image_url", []))
+        desired_img_upload_urls = set(update_data) if update_data.image_url is not None else set(current_img_upload_urls)
 
         for url in current_img_upload_urls:
             if url not in desired_img_upload_urls:
@@ -213,8 +213,7 @@ async def update_product(product_id: str, update_data: ProductUpdate, new_upload
 
         final_img_upload_list = list(desired_img_upload_urls.union(set(new_image_urls)))
 
-        update_fields = update_data.model_dump(exclude_unset=True)
-        update_fields["img_upload"] = final_img_upload_list
+        update_fields["image_url"] = final_img_upload_list
 
         products.update_one(
             {"_id": ObjectId(product_id)},
@@ -273,4 +272,111 @@ def delete_product(product_id: str, user_id: str):
         raise HTTPException(
             status_code=500,
             detail=f"Error interno del servidor al borrar el producto: {e}"
+        )
+
+def update_product_data(product_id: str, update_data: ProductUpdate, user_id: str):
+    try:
+        update_fields = update_data.model_dump(exclude_unset=True)
+        product = products.find_one({"_id": ObjectId(product_id)})
+
+        if not product:
+            raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+        if not update_fields:
+            raise HTTPException(status_code=400, detail="No hay datos para actualizar")
+
+        sku_modified = False
+        sku_relevant_fields = ["category", "brand", "model", "cpu", "gpu", "ram", "storage", "display_size",
+                               "panel_type"]
+
+        for field in sku_relevant_fields:
+            if field in update_fields and update_fields[field] != product.get(field):
+                sku_modified = True
+                break
+
+        if sku_modified:
+            updated_product_data = product.copy()
+            updated_product_data.update(update_fields)
+
+            new_sku = generate_sku(updated_product_data)
+
+            if products.find_one({"sku": new_sku, "_id": {"$ne": ObjectId(product_id)}}):
+                raise HTTPException(status_code=409, detail="El nuevo SKU del producto ya existe")
+
+            update_fields["sku"] = new_sku
+
+        products.update_one(
+            {"_id": ObjectId(product_id)},
+            {"$set": update_fields}
+        )
+
+        updated_product = products.find_one({"_id": ObjectId(product_id)})
+        updated_product["_id"] = str(updated_product["_id"])
+
+        return {
+            "message": "Producto actualizado exitosamente",
+            "flat": updated_product
+        }
+
+    except HTTPException as e:
+        raise e
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno del servidor al actualizar el producto: {e}"
+        )
+
+async def update_product_files(
+        product_id: str,
+        new_img_upload: Optional[List[UploadFile]],
+        images_to_delete: Optional[List[str]],
+        user_id: str
+):
+    try:
+        product = products.find_one({"_id": ObjectId(product_id)})
+        if not product:
+            raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+        if product.get("owner") != user_id:
+            raise HTTPException(status_code=403, detail="No tienes permiso para actualizar este producto")
+
+        if images_to_delete:
+            for url in images_to_delete:
+                file_path = url.replace(API_URL + "/", UPLOAD_DIRECTORY + "/")
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+        new_image_urls = []
+        if new_img_upload:
+            for file in new_img_upload:
+                file_ext = os.path.splitext(file.filename)[1]
+                file_name = f"{uuid.uuid4()}{file_ext}"
+                file_path = os.path.join(UPLOAD_DIRECTORY, file_name)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+                new_image_urls.append(f"{API_URL}/{file_name}")
+
+        current_images = [url for url in product.get("image_url", []) if url not in images_to_delete]
+        updated_image_urls = current_images + new_image_urls
+
+        products.update_one(
+            {"_id": ObjectId(product_id)},
+            {"$set": {"image_url": updated_image_urls, "updated_at": datetime.utcnow()}}
+        )
+
+        updated_product = products.find_one({"_id": ObjectId(product_id)})
+        updated_product["_id"] = str(updated_product["_id"])
+
+        return {
+            "message": "Imágenes del producto actualizadas exitosamente",
+            "data": updated_product
+        }
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno del servidor al actualizar las imágenes: {e}"
         )

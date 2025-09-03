@@ -1,5 +1,6 @@
 from typing import Optional, List
 from pydantic import BaseModel
+from fastapi import Form
 
 class Product(BaseModel):
     product_name: str

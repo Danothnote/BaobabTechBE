@@ -1,9 +1,9 @@
 import os
+import uuid
 from datetime import datetime, timezone, timedelta
-
 from bson import ObjectId
-from fastapi import HTTPException, status, Response
-
+from fastapi import HTTPException, status, Response, UploadFile
+from pathlib import Path
 from database.mongo import db
 from models.User import CreateUser, UserLogin, UpdateUser
 import bcrypt
@@ -11,6 +11,8 @@ import jwt
 
 users =  db['users']
 salt = bcrypt.gensalt()
+UPLOAD_DIRECTORY = "static/images/users"
+API_URL = "http://localhost:8000/static/images/users"
 
 def get_user(current_user):
     try:
@@ -71,8 +73,6 @@ def login_user(user_login: UserLogin, response: Response):
                 detail="Usuario o contraseña incorrecto",
             )
 
-        user_data["_id"] = str(user_data["_id"])
-
         check = bcrypt.checkpw(
             password= user_login.password.encode("utf8"),
             hashed_password=user_data["password"].encode("utf8")
@@ -83,6 +83,12 @@ def login_user(user_login: UserLogin, response: Response):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Usuario o contraseña incorrecto",
             )
+
+        if user_data["status"] == "inactive":
+            activate = {"status": "active"}
+            users.update_one({"_id": user_data["_id"]}, {"$set": activate})
+
+        user_data["_id"] = str(user_data["_id"])
 
         payload = {
             "_id": user_data["_id"],
@@ -135,9 +141,8 @@ def logout_user(response: Response):
             detail=f"Error al cerrar sesión: {e}"
         )
 
-def update_user(current_user: dict, update_data: UpdateUser):
+def update_user_data(update_data: UpdateUser, user_id):
     try:
-        user_id = current_user["_id"]
         update_fields = update_data.model_dump(exclude_unset=True)
 
         if not update_fields:
@@ -151,6 +156,66 @@ def update_user(current_user: dict, update_data: UpdateUser):
                 status_code=status.HTTP_409_CONFLICT,
                 detail="El correo electrónico no se debe modificar"
             )
+
+        users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": update_fields}
+        )
+
+        updated_user = users.find_one({"_id": ObjectId(user_id)})
+        updated_user["_id"] = str(updated_user["_id"])
+
+        return {
+            "message": "Usuario actualizado exitosamente",
+            "user": updated_user
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno del servidor al actualizar el usuario: {e}"
+        )
+
+async def update_user_files(update_data: UploadFile, user_id: str):
+    try:
+        if not update_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No hay datos para actualizar"
+            )
+
+        if not update_data.content_type.startswith('image/'):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El archivo debe ser una imagen."
+            )
+
+        user_upload_directory = os.path.join(UPLOAD_DIRECTORY, user_id)
+
+        if os.path.exists(user_upload_directory):
+            for filename in os.listdir(user_upload_directory):
+                file_path = os.path.join(user_upload_directory, filename)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+
+        os.makedirs(user_upload_directory, exist_ok=True)
+        file_extension = os.path.splitext(update_data.filename)[1]
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_location = os.path.join(user_upload_directory, unique_filename)
+
+        try:
+            with open(file_location, "wb+") as file_object:
+                file_object.write(await update_data.read())
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error al guardar el archivo: {e}"
+            )
+
+        new_image_url = f"{API_URL}/{user_id}/{unique_filename}"
+
+        update_fields = {"profile_picture": new_image_url}
 
         users.update_one(
             {"_id": ObjectId(user_id)},
