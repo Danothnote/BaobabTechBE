@@ -9,7 +9,7 @@ from models.User import UpdateUser
 
 users_db = db['users']
 UPLOAD_DIRECTORY = "static/images/users"
-API_URL = "http://localhost:8000/static/images/users"
+API_URL = "https://back.danosv.com/static/images/users"
 
 def get_user_by_id(user_id, current_user_role: str):
     if current_user_role != "admin":
