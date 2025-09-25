@@ -3,7 +3,8 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 from fastapi import HTTPException, status, Response, UploadFile
-from pathlib import Path
+from fastapi_mail import FastMail, MessageSchema
+from mail_server.mail_server import create_reset_token, conf, create_verification_token
 from database.mongo import db
 from models.User import CreateUser, UserLogin, UpdateUser
 import bcrypt
@@ -13,6 +14,66 @@ users =  db['users']
 salt = bcrypt.gensalt()
 UPLOAD_DIRECTORY = "static/images/users"
 API_URL = "http://localhost:8000/static/images/users"
+fm = FastMail(conf)
+
+
+def send_verification_email(email: str):
+    token = create_verification_token(email)
+
+    verification_link = f"http://localhost:5173/verify-email/{token}"
+
+    html_content = f"""
+        <html>
+          <body>
+            <p>Gracias por registrarte. Haz clic en el siguiente enlace para verificar tu cuenta:</p>
+            <p><a href="{verification_link}">Verificar mi Cuenta</a></p>
+            <p>Este enlace expirará en 24 horas.</p>
+          </body>
+        </html>
+        """
+
+    message = MessageSchema(
+        subject="Verificación de Cuenta",
+        recipients=[email],
+        body=html_content,
+        subtype="html"
+    )
+
+    try:
+        fm.send_message(message)
+    except Exception as e:
+        print(f"Error al enviar correo de verificación: {e}")
+
+def verify_email(token: str):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+        email = payload.get("sub")
+        token_type = payload.get("type")
+
+        if token_type != "email_verification":
+            raise HTTPException(status_code=400, detail="Token de tipo incorrecto.")
+
+        user = users.find_one({"email": email})
+
+        if not user:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+
+        if user.get("is_verified") is True:
+            return {"message": "La cuenta ya estaba verificada."}
+
+        users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"is_verified": True}}
+        )
+
+        return {"message": "Cuenta verificada exitosamente."}
+
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=400, detail="El token es inválido o ha expirado.")
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {e}")
 
 def get_user(current_user):
     try:
@@ -45,6 +106,9 @@ def register_user(create_user: CreateUser):
         user_data["role"] = "user"
         user_data["status"] = "active"
         user_data["profile_picture"] = ""
+        user_data["is_verified"] = False
+
+        send_verification_email(user_data["email"])
 
         hash_password = bcrypt.hashpw(
             password= user_data["password"].encode("utf8"),
@@ -82,6 +146,12 @@ def login_user(user_login: UserLogin, response: Response):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Usuario o contraseña incorrecto",
+            )
+
+        if not user_data.get("is_verified", False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tu cuenta no ha sido verificada. Por favor, revisa tu correo electrónico."
             )
 
         if user_data["status"] == "inactive":
@@ -236,3 +306,76 @@ async def update_user_files(update_data: UploadFile, user_id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error interno del servidor al actualizar el usuario: {e}"
         )
+
+def forgot_password(request, background_tasks):
+    req = request.model_dump()
+    email = req["email"]
+    user = db["users"].find_one({"email": email})
+    if not user:
+        return {"message": "Si la cuenta existe, se ha enviado un correo de restablecimiento."}
+
+    expires_minutes= 15
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
+    reset_token = create_reset_token(email, expires_minutes)
+
+    db["users"].update_one(
+        {"email": email},
+        {"$set": {"reset_token": reset_token, "reset_token_expires": expires_at}}
+    )
+
+    reset_link = f"http://localhost:5173/reset-password/{reset_token}"
+
+    html_content = f"""
+        <html>
+          <body>
+            <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace:</p>
+            <p><a href="{reset_link}">Restablecer Contraseña</a></p>
+            <p>Este enlace expirará en {expires_minutes} minutos.</p>
+          </body>
+        </html>
+        """
+
+    message = MessageSchema(
+        subject="Restablecimiento de Contraseña",
+        recipients=[email],
+        body=html_content,
+        subtype="html"
+    )
+
+    background_tasks.add_task(fm.send_message, message)
+
+    return {"message": "Si la cuenta existe, se ha enviado un correo de restablecimiento."}
+
+def reset_password(data):
+    user_data = data.model_dump()
+    try:
+        payload = jwt.decode(user_data["token"], os.getenv("SECRET_KEY"), algorithms=["HS256"])
+        email = payload.get("sub")
+
+        user = db["users"].find_one({
+            "email": email,
+            "reset_token": user_data["token"],
+            "reset_token_expires": {"$gt": datetime.now(timezone.utc)}
+        })
+
+        if not user:
+            raise HTTPException(status_code=400, detail="El token es inválido o ha expirado.")
+
+        hash_password = bcrypt.hashpw(
+            password=data.new_password.encode("utf8"),
+            salt=salt
+        ).decode("utf8")
+
+        db["users"].update_one(
+            {"_id": user["_id"]},
+            {"$set": {
+                "password": hash_password,
+                "reset_token": None,
+                "reset_token_expires": None
+            }}
+        )
+
+        return {"message": "Contraseña restablecida exitosamente."}
+
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=400, detail="El token es inválido o ha expirado.")

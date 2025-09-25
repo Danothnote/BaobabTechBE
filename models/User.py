@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 class CreateUser(BaseModel):
     firstname: str
@@ -20,3 +20,14 @@ class UpdateUser(BaseModel):
     birth_date: Optional[datetime] = None
     profile_picture: Optional[str] = None
     favorite_products: Optional[List[str]] = None
+    role: Optional[str] = None
+
+class UpdateUserFiles(BaseModel):
+    pass
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordData(BaseModel):
+    token: str
+    new_password: str

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 from fastapi import HTTPException, UploadFile
 from database.mongo import db
@@ -128,7 +128,7 @@ async def create_product(product: Product, upload_files: List[UploadFile], owner
             )
 
         new_product["owner"] = owner
-        new_product["created_at"] = datetime.now()
+        new_product["created_at"] = datetime.now(timezone.utc)
 
         result = products.insert_one(new_product)
         new_product_id = result.inserted_id
@@ -362,7 +362,7 @@ async def update_product_files(
 
         products.update_one(
             {"_id": ObjectId(product_id)},
-            {"$set": {"image_url": updated_image_urls, "updated_at": datetime.utcnow()}}
+            {"$set": {"image_url": updated_image_urls, "updated_at": datetime.now(timezone.utc)}}
         )
 
         updated_product = products.find_one({"_id": ObjectId(product_id)})
