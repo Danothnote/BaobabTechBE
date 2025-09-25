@@ -13,14 +13,14 @@ import jwt
 users =  db['users']
 salt = bcrypt.gensalt()
 UPLOAD_DIRECTORY = "static/images/users"
-API_URL = "https://back.danosv.com/static/images/users"
+API_URL = "http://localhost:8000/static/images/users"
 fm = FastMail(conf)
 
 
 def send_verification_email(email: str):
     token = create_verification_token(email)
 
-    verification_link = f"https://baobab.danosv.com/verify-email/{token}"
+    verification_link = f"http://localhost:5173/verify-email/{token}"
 
     html_content = f"""
         <html>
@@ -323,7 +323,7 @@ def forgot_password(request, background_tasks):
         {"$set": {"reset_token": reset_token, "reset_token_expires": expires_at}}
     )
 
-    reset_link = f"https://baobab.danosv.com/reset-password/{reset_token}"
+    reset_link = f"http://localhost:5173/reset-password/{reset_token}"
 
     html_content = f"""
         <html>
