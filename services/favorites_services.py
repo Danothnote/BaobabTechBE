@@ -1,7 +1,5 @@
-from bson import ObjectId
 from fastapi import HTTPException
 from database.mongo import db
-from typing import List
 
 favorites_db = db["favorites"]
 

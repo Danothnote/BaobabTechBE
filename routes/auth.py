@@ -10,8 +10,8 @@ def get_user_router(current_user: dict = Depends(get_current_user)):
     return get_user(current_user)
 
 @router.post("/signup")
-def register_user_router(create_user: CreateUser):
-    return register_user(create_user)
+def register_user_router(create_user: CreateUser, background_tasks: BackgroundTasks):
+    return register_user(create_user, background_tasks)
 
 @router.post("/verify-email/{token}")
 def verify_email_router(token: str):

@@ -12,7 +12,7 @@ def get_categories_router():
 def add_category_router(category: Category):
     return add_category(category)
 
-@router.put("/update/{category_id}")
+@router.patch("/update/{category_id}")
 def update_category_router(category_id: str, new_data: dict):
     return update_category(category_id, new_data)
 

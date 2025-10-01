@@ -13,36 +13,9 @@ import jwt
 users =  db['users']
 salt = bcrypt.gensalt()
 UPLOAD_DIRECTORY = "static/images/users"
-API_URL = "https://back.danosv.com/static/images/users"
+backend_url = os.getenv("API_URL")
+API_URL = f"{backend_url}/static/images/users"
 fm = FastMail(conf)
-
-
-def send_verification_email(email: str):
-    token = create_verification_token(email)
-
-    verification_link = f"https://baobab.danosv.com/verify-email/{token}"
-
-    html_content = f"""
-        <html>
-          <body>
-            <p>Gracias por registrarte. Haz clic en el siguiente enlace para verificar tu cuenta:</p>
-            <p><a href="{verification_link}">Verificar mi Cuenta</a></p>
-            <p>Este enlace expirará en 24 horas.</p>
-          </body>
-        </html>
-        """
-
-    message = MessageSchema(
-        subject="Verificación de Cuenta",
-        recipients=[email],
-        body=html_content,
-        subtype="html"
-    )
-
-    try:
-        fm.send_message(message)
-    except Exception as e:
-        print(f"Error al enviar correo de verificación: {e}")
 
 def verify_email(token: str):
     try:
@@ -93,7 +66,7 @@ def get_user(current_user):
             detail="ID de usuario inválido o error en la consulta"
         )
 
-def register_user(create_user: CreateUser):
+def register_user(create_user: CreateUser, background_tasks):
     try:
         user_data = create_user.model_dump()
         result_exist = users.find_one({"email": user_data["email"]})
@@ -108,7 +81,28 @@ def register_user(create_user: CreateUser):
         user_data["profile_picture"] = ""
         user_data["is_verified"] = False
 
-        send_verification_email(user_data["email"])
+        token = create_verification_token(user_data["email"])
+
+        verification_link = f"https://baobab.danosv.com/verify-email/{token}"
+
+        html_content = f"""
+                <html>
+                  <body>
+                    <p>Gracias por registrarte. Haz clic en el siguiente enlace para verificar tu cuenta:</p>
+                    <p><a href="{verification_link}">Verificar mi Cuenta</a></p>
+                    <p>Este enlace expirará en 24 horas.</p>
+                  </body>
+                </html>
+                """
+
+        message = MessageSchema(
+            subject="Verificación de Cuenta",
+            recipients=[user_data["email"]],
+            body=html_content,
+            subtype="html"
+        )
+
+        background_tasks.add_task(fm.send_message, message)
 
         hash_password = bcrypt.hashpw(
             password= user_data["password"].encode("utf8"),

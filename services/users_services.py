@@ -9,7 +9,8 @@ from models.User import UpdateUser
 
 users_db = db['users']
 UPLOAD_DIRECTORY = "static/images/users"
-API_URL = "https://back.danosv.com/static/images/users"
+backend_url = os.getenv("API_URL")
+API_URL = f"{backend_url}/static/images/users"
 
 def get_user_by_id(user_id, current_user_role: str):
     if current_user_role != "admin":
@@ -42,6 +43,7 @@ def get_user_by_id(user_id, current_user_role: str):
         )
 
 def get_all_users(current_user_role: str):
+    print(current_user_role)
     if current_user_role != "admin":
         raise HTTPException(
             status_code=403,

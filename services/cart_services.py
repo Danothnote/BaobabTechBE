@@ -1,10 +1,16 @@
-from models.Cart import Cart, ProductItem
+from models.Cart import ProductItem
 from database.mongo import db
 
 cart_db = db["carts"]
 
 def get_cart(user_id: str):
     cart = cart_db.find_one({"user_id": user_id})
+
+    if not cart:
+        new_cart = {"user_id": user_id, "items": []}
+        result = cart_db.insert_one(new_cart)
+        cart = cart_db.find_one({"_id": result.inserted_id})
+
     if cart:
         cart["_id"] = str(cart["_id"])
     return cart

@@ -10,7 +10,8 @@ import uuid
 
 products = db["products"]
 UPLOAD_DIRECTORY = "static/images/products"
-API_URL = "https://back.danosv.com/static/images/products"
+backend_url = os.getenv("API_URL")
+API_URL = f"{backend_url}/static/images/products"
 
 def generate_sku(new_product: Product):
     sku_parts = [
